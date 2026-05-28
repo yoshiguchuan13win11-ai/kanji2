@@ -1,1082 +1,931 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>漢字書き取り練習</title>
-  <style>
-    /* ======================================
-       CSS変数 / デザイントークン
-    ====================================== */
-    :root {
-      --blue-dark:   #1a3a5c;
-      --blue-mid:    #1e5fa8;
-      --blue-light:  #4a9de0;
-      --blue-pale:   #ddeef9;
-      --blue-bg:     #f0f7ff;
-      --accent:      #ff6b35;
-      --green:       #27ae60;
-      --green-dark:  #1e8449;
-      --orange:      #e67e22;
-      --white:       #ffffff;
-      --gray-100:    #f5f7fa;
-      --gray-200:    #e4eaf2;
-      --gray-400:    #9aafc4;
-      --gray-700:    #3d5a7a;
-      --shadow-sm:   0 2px 8px rgba(26,58,92,0.10);
-      --shadow-md:   0 4px 20px rgba(26,58,92,0.15);
-      --shadow-lg:   0 8px 32px rgba(26,58,92,0.20);
-      --radius:      16px;
-      --radius-sm:   10px;
-      --font-jp:     'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', sans-serif;
-    }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+<title>漢字練習</title>
+<style>
+/* Google Fonts - BIZ UDPMincho (教科書体に近い明朝) */
+@import url('https://fonts.googleapis.com/css2?family=BIZ+UDPMincho:wght@400;700&display=swap');
 
-    /* ======================================
-       リセット & ベース
-    ====================================== */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 100%; height: 100%;
-      overflow: hidden;
-      font-family: var(--font-jp);
-      background: var(--blue-bg);
-      color: var(--blue-dark);
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-    }
+:root {
+  --bg:       #fafaf8;
+  --surface:  #ffffff;
+  --border:   #e8e4de;
+  --border2:  #d0c9be;
+  --ink:      #1c1917;
+  --ink2:     #78716c;
+  --ink3:     #a8a29e;
+  --accent:   #2563eb;
+  --correct:  #16a34a;
+  --wrong:    #dc2626;
+  --kanji-font: 'BIZ UDPMincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --ui-font:  'BIZ UDPMincho', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+  --r: 6px;
+}
 
-    /* ======================================
-       ヘッダー
-    ====================================== */
-    #header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      height: 56px;
-      background: linear-gradient(90deg, var(--blue-dark) 0%, var(--blue-mid) 100%);
-      box-shadow: var(--shadow-md);
-      z-index: 100;
-      position: relative;
-      gap: 12px;
-    }
-    #header h1 {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--white);
-      letter-spacing: 0.08em;
-      white-space: nowrap;
-    }
-    #header h1 span {
-      font-size: 12px;
-      font-weight: 400;
-      color: var(--blue-pale);
-      margin-left: 10px;
-    }
-    /* ヘッダー右側のコントロール群 */
-    .header-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-    /* 答え非表示モードトグル */
-    .hide-mode-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.22);
-      border-radius: 24px;
-      padding: 6px 14px;
-      cursor: pointer;
-      transition: all 0.2s;
-      user-select: none;
-    }
-    .hide-mode-wrap:hover { background: rgba(255,255,255,0.2); }
-    .hide-mode-wrap.active {
-      background: var(--accent);
-      border-color: var(--accent);
-    }
-    .hide-mode-wrap .toggle-label {
-      font-size: 12px;
-      font-weight: 700;
-      color: white;
-      white-space: nowrap;
-    }
-    /* トグルスイッチ */
-    .toggle-switch {
-      width: 32px; height: 18px;
-      background: rgba(255,255,255,0.3);
-      border-radius: 9px;
-      position: relative;
-      transition: background 0.2s;
-      flex-shrink: 0;
-    }
-    .toggle-switch::after {
-      content: '';
-      position: absolute;
-      top: 2px; left: 2px;
-      width: 14px; height: 14px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-    }
-    .hide-mode-wrap.active .toggle-switch { background: rgba(255,255,255,0.5); }
-    .hide-mode-wrap.active .toggle-switch::after { transform: translateX(14px); }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* 問題編集ボタン */
-    .btn-edit-open {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 13px;
-      font-weight: 700;
-      color: white;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-family: var(--font-jp);
-      white-space: nowrap;
-    }
-    .btn-edit-open:hover { background: rgba(255,255,255,0.25); }
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--ui-font);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  overflow: hidden;
+}
 
-    /* ======================================
-       メインレイアウト
-    ====================================== */
-    #main {
-      display: grid;
-      grid-template-columns: 180px 1fr 1fr;
-      gap: 14px;
-      padding: 14px;
-      height: calc(100vh - 56px);
-      overflow: hidden;
-    }
+/* ── ヘッダー ── */
+#hdr {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+#hdr-title {
+  font-family: var(--kanji-font);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: .12em;
+}
+#hdr-title span {
+  font-size: 11px;
+  color: var(--ink3);
+  font-weight: 400;
+  margin-left: 10px;
+  letter-spacing: .06em;
+}
+.hdr-actions { display: flex; gap: 8px; align-items: center; }
 
-    /* ======================================
-       共通パネル
-    ====================================== */
-    .panel {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-md);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .panel-header {
-      background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
-      color: var(--white);
-      padding: 11px 16px;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-    .panel-header .icon { font-size: 16px; }
+.ghost-btn {
+  height: 32px;
+  padding: 0 14px;
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  font-size: 12px;
+  font-family: var(--ui-font);
+  color: var(--ink2);
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.ghost-btn:hover { background: var(--border); color: var(--ink); }
+.ghost-btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-    /* ======================================
-       左パネル：問題一覧
-    ====================================== */
-    #problem-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    #problem-list::-webkit-scrollbar { width: 4px; }
-    #problem-list::-webkit-scrollbar-track { background: transparent; }
-    #problem-list::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
+/* ── レイアウト ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - 48px);
+  overflow: hidden;
+}
 
-    /* 問題カード */
-    .problem-card {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 10px;
-      border-radius: var(--radius-sm);
-      border: 2px solid transparent;
-      cursor: pointer;
-      transition: all 0.18s ease;
-      background: var(--gray-100);
-      user-select: none;
-      position: relative;
-    }
-    .problem-card:hover { background: var(--blue-pale); border-color: var(--blue-light); transform: translateX(2px); }
-    .problem-card.active { background: var(--blue-pale); border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(30,95,168,0.12); }
-    .problem-card .kanji-label {
-      font-size: 26px; font-weight: 700; color: var(--blue-dark);
-      line-height: 1; min-width: 32px; text-align: center;
-    }
-    /* 答え非表示モード時：問題カードの漢字を隠す */
-    body.hide-mode .problem-card .kanji-label {
-      color: transparent;
-      background: var(--gray-200);
-      border-radius: 4px;
-    }
-    body.hide-mode .problem-card.active .kanji-label {
-      color: transparent;
-      background: var(--blue-light);
-    }
-    .problem-card.active .kanji-label { color: var(--blue-mid); }
-    .problem-card .yomi-label { font-size: 11px; color: var(--gray-700); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .problem-card .num {
-      font-size: 10px; color: var(--gray-400); background: var(--gray-200);
-      border-radius: 50%; width: 18px; height: 18px;
-      display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0;
-    }
-    .problem-card.active .num { background: var(--blue-mid); color: white; }
+/* ── 問題ナビ ── */
+#nav {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+}
+#nav-label {
+  font-size: 11px;
+  color: var(--ink3);
+  white-space: nowrap;
+  letter-spacing: .06em;
+}
+#pill-wrap {
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+  display: flex;
+  gap: 6px;
+  padding: 2px 0;
+}
+#pill-wrap::-webkit-scrollbar { display: none; }
 
-    /* ======================================
-       キャンバスエリア共通
-    ====================================== */
-    .canvas-area {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-      background-color: var(--white);
-    }
-    .canvas-area::before {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        linear-gradient(var(--blue-pale) 1px, transparent 1px),
-        linear-gradient(90deg, var(--blue-pale) 1px, transparent 1px);
-      background-size: 50% 50%;
-      border: 2px solid var(--blue-pale);
-      pointer-events: none; z-index: 1;
-    }
-    .canvas-area::after {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        linear-gradient(var(--blue-light) 1px, transparent 1px),
-        linear-gradient(90deg, var(--blue-light) 1px, transparent 1px);
-      background-size: 100% 100%;
-      background-position: center;
-      opacity: 0.35;
-      pointer-events: none; z-index: 1;
-    }
+.pill {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: all .15s;
+  background: var(--bg);
+  position: relative;
+}
+.pill-k {
+  font-family: var(--kanji-font);
+  font-size: 19px;
+  color: var(--ink);
+  line-height: 1;
+}
+.pill-n {
+  font-size: 9px;
+  color: var(--ink3);
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+}
+.pill:hover { border-color: var(--accent); }
+.pill.active {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+.pill.active .pill-k { color: #fff; }
+.pill.done-correct { border-color: var(--correct); }
+.pill.done-wrong   { border-color: var(--wrong); }
 
-    /* お手本漢字（なぞりエリア） */
-    #trace-kanji {
-      position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: min(55vw, 55vh, 220px);
-      font-weight: 900;
-      color: var(--blue-mid);
-      opacity: 0.18;
-      pointer-events: none; z-index: 2;
-      transition: opacity 0.35s ease;
-      line-height: 1;
-      font-family: 'Hiragino Mincho ProN', 'Noto Serif JP', 'Yu Mincho', serif;
-      /* 答え非表示モード時は完全に隠す */
-    }
-    #trace-kanji.answer-visible { opacity: 0.55; }
-    /* 答え非表示モードでは、answer-visibleでも薄くする（なぞれるが答えとしては表示しない） */
-    body.hide-mode #trace-kanji { opacity: 0; }
-    body.hide-mode #trace-kanji.answer-visible { opacity: 0.55; }
+/* 非表示モードで漢字を隠す */
+body.hide-mode .pill-k { color: transparent !important; background: var(--border); border-radius: 2px; }
 
-    /* 答え非表示モードの警告バナー */
-    #hide-mode-banner {
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 7px 14px;
-      background: linear-gradient(90deg, var(--accent), #e55a25);
-      color: white;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
-      letter-spacing: 0.04em;
-    }
-    body.hide-mode #hide-mode-banner { display: flex; }
+.nav-arrow {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  background: none;
+  font-size: 16px;
+  color: var(--ink2);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.nav-arrow:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+.nav-arrow:disabled { opacity: .25; cursor: default; }
 
-    .draw-canvas {
-      position: absolute; inset: 0; z-index: 3;
-      touch-action: none; cursor: crosshair;
-    }
+/* ── メインエリア ── */
+#main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0;
+  overflow: hidden;
+  min-height: 0;
+}
 
-    /* ======================================
-       ボタンエリア
-    ====================================== */
-    .btn-area {
-      padding: 10px 12px;
-      display: flex; gap: 8px;
-      background: var(--gray-100);
-      border-top: 1px solid var(--gray-200);
-      flex-shrink: 0; flex-wrap: wrap;
-    }
-    .btn {
-      flex: 1; min-width: 76px;
-      padding: 11px 8px;
-      border: none; border-radius: var(--radius-sm);
-      font-family: var(--font-jp); font-size: 13px; font-weight: 700;
-      cursor: pointer; transition: all 0.18s ease;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-      letter-spacing: 0.04em; user-select: none; -webkit-user-select: none;
-    }
-    .btn:active { transform: scale(0.96); }
-    .btn-clear { background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; box-shadow: 0 3px 10px rgba(231,76,60,0.3); }
-    .btn-clear:hover { box-shadow: 0 4px 14px rgba(231,76,60,0.45); }
-    .btn-answer { background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark)); color: white; box-shadow: 0 3px 10px rgba(30,95,168,0.3); }
-    .btn-answer:hover { box-shadow: 0 4px 14px rgba(30,95,168,0.45); }
-    .btn-answer.active { background: linear-gradient(135deg, var(--accent), #e55a25); box-shadow: 0 3px 10px rgba(255,107,53,0.4); }
-    .btn-green { background: linear-gradient(135deg, var(--green), var(--green-dark)); color: white; box-shadow: 0 3px 10px rgba(39,174,96,0.3); }
-    .btn-thin {
-      background: var(--white); color: var(--blue-dark);
-      border: 2px solid var(--gray-200); box-shadow: var(--shadow-sm);
-      flex: 0 0 auto; min-width: 42px; padding: 9px; font-size: 12px;
-    }
-    .btn-thin.selected { border-color: var(--blue-mid); background: var(--blue-pale); color: var(--blue-mid); }
+/* スマホ縦向き */
+@media (max-width: 600px), (orientation: portrait) and (max-width: 768px) {
+  #main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  #sidebar { border-right: none; border-bottom: 1px solid var(--border); padding: 14px 16px; }
+}
 
-    /* 問題情報（中央パネル上部） */
-    #current-info {
-      padding: 9px 16px; border-bottom: 1px solid var(--gray-200);
-      display: flex; align-items: center; gap: 12px;
-      flex-shrink: 0; background: var(--white);
-    }
-    #current-kanji-display {
-      font-size: 36px; font-weight: 900; color: var(--blue-dark); line-height: 1;
-      font-family: 'Hiragino Mincho ProN', 'Noto Serif JP', 'Yu Mincho', serif;
-      transition: all 0.3s;
-    }
-    /* 答え非表示モード：中央の漢字表示も隠す */
-    body.hide-mode #current-kanji-display {
-      color: transparent;
-      background: var(--gray-200);
-      border-radius: 6px;
-      min-width: 40px; min-height: 40px;
-    }
-    body.hide-mode.answer-shown #current-kanji-display { color: var(--blue-dark); background: transparent; }
-    .info-text { display: flex; flex-direction: column; gap: 2px; }
-    .info-yomi { font-size: 15px; color: var(--blue-mid); font-weight: 600; }
-    .info-stroke { font-size: 11px; color: var(--gray-400); }
+/* ── サイドバー（問題情報） ── */
+#sidebar {
+  border-right: 1px solid var(--border);
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  background: var(--surface);
+}
 
-    #free-info {
-      padding: 9px 16px; border-bottom: 1px solid var(--gray-200);
-      font-size: 12px; color: var(--gray-700);
-      flex-shrink: 0; background: var(--white);
-      display: flex; align-items: center; gap: 8px;
-    }
-    #free-info .dot {
-      width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
-      animation: pulse 2s infinite; flex-shrink: 0;
-    }
-    @keyframes pulse {
-      0%,100% { opacity:1; transform:scale(1); }
-      50% { opacity:0.5; transform:scale(0.85); }
-    }
+.side-section { display: flex; flex-direction: column; gap: 6px; }
+.side-label {
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--ink3);
+  text-transform: uppercase;
+}
+#side-kanji {
+  font-family: var(--kanji-font);
+  font-size: 68px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  transition: all .2s;
+}
+body.hide-mode:not(.ans-shown) #side-kanji {
+  color: transparent;
+  background: var(--border);
+  border-radius: 6px;
+  user-select: none;
+}
+#side-yomi {
+  font-size: 17px;
+  color: var(--ink);
+  font-family: var(--kanji-font);
+  letter-spacing: .04em;
+}
+#side-hint {
+  font-size: 12px;
+  color: var(--ink3);
+  letter-spacing: .04em;
+}
+#side-num {
+  font-size: 11px;
+  color: var(--ink3);
+  letter-spacing: .06em;
+}
 
-    /* ======================================================
-       問題編集モーダル
-    ====================================================== */
-    #modal-overlay {
-      display: none;
-      position: fixed; inset: 0;
-      background: rgba(10,25,47,0.65);
-      backdrop-filter: blur(4px);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-    }
-    #modal-overlay.open { display: flex; }
+/* 答え表示ボタン */
+#ans-btn {
+  width: 100%;
+  height: 42px;
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  background: none;
+  font-family: var(--kanji-font);
+  font-size: 13px;
+  color: var(--ink2);
+  cursor: pointer;
+  letter-spacing: .06em;
+  transition: all .18s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+#ans-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+#ans-btn.showing { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-    #modal {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
-      width: min(680px, 95vw);
-      max-height: 85vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      animation: modalIn 0.22s ease;
-    }
-    @keyframes modalIn {
-      from { opacity: 0; transform: translateY(20px) scale(0.97); }
-      to   { opacity: 1; transform: none; }
-    }
+/* 正誤ボタン */
+.judge-btns {
+  display: flex; gap: 8px;
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+.judge-btns.visible { opacity: 1; pointer-events: all; }
+.jbtn {
+  flex: 1; height: 40px;
+  border-radius: var(--r);
+  font-family: var(--kanji-font);
+  font-size: 13px;
+  cursor: pointer;
+  letter-spacing: .06em;
+  border: 1px solid;
+  transition: all .15s;
+}
+.jbtn-ok  { background: #f0fdf4; border-color: #86efac; color: var(--correct); }
+.jbtn-ng  { background: #fef2f2; border-color: #fca5a5; color: var(--wrong);   }
+.jbtn-ok:hover { background: var(--correct); color: #fff; border-color: var(--correct); }
+.jbtn-ng:hover { background: var(--wrong);   color: #fff; border-color: var(--wrong);   }
 
-    .modal-header {
-      background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
-      color: white;
-      padding: 16px 20px;
-      display: flex; align-items: center; justify-content: space-between;
-      flex-shrink: 0;
-    }
-    .modal-header h2 { font-size: 16px; font-weight: 700; }
-    .modal-close {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: rgba(255,255,255,0.15); border: none;
-      color: white; font-size: 18px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: background 0.2s; font-family: var(--font-jp);
-    }
-    .modal-close:hover { background: rgba(255,255,255,0.28); }
+/* 判定結果バッジ */
+#result-badge {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-family: var(--kanji-font);
+  letter-spacing: .06em;
+}
+#result-badge.show { display: flex; }
+#result-badge.correct { color: var(--correct); }
+#result-badge.wrong   { color: var(--wrong); }
 
-    .modal-body {
-      flex: 1; overflow-y: auto; padding: 16px 20px;
-      display: flex; flex-direction: column; gap: 12px;
-    }
-    .modal-body::-webkit-scrollbar { width: 5px; }
-    .modal-body::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
+/* ── キャンバスエリア ── */
+#canvas-wrap {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+}
 
-    /* 問題追加フォーム */
-    .add-form {
-      background: var(--blue-bg);
-      border: 2px dashed var(--blue-light);
-      border-radius: var(--radius-sm);
-      padding: 14px 16px;
-    }
-    .add-form-title {
-      font-size: 13px; font-weight: 700; color: var(--blue-mid);
-      margin-bottom: 10px;
-    }
-    .add-form-row {
-      display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap;
-    }
-    .add-form-field {
-      display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px;
-    }
-    .add-form-field label {
-      font-size: 11px; font-weight: 600; color: var(--gray-700);
-    }
-    .add-form-field input {
-      padding: 9px 12px;
-      border: 2px solid var(--gray-200);
-      border-radius: 8px;
-      font-size: 15px; font-family: var(--font-jp);
-      color: var(--blue-dark);
-      outline: none; transition: border-color 0.2s;
-      background: white;
-    }
-    .add-form-field input:focus { border-color: var(--blue-mid); }
-    .add-form-field input.kanji-input { font-size: 22px; width: 70px; text-align: center; }
-    .btn-add {
-      padding: 10px 20px; background: linear-gradient(135deg, var(--green), var(--green-dark));
-      color: white; border: none; border-radius: 8px;
-      font-size: 14px; font-weight: 700; cursor: pointer;
-      font-family: var(--font-jp); transition: all 0.2s;
-      white-space: nowrap; align-self: flex-end;
-    }
-    .btn-add:hover { box-shadow: 0 4px 14px rgba(39,174,96,0.4); }
+/* 升目 */
+#canvas-wrap::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 50% 50%;
+  pointer-events: none; z-index: 1;
+}
+/* 中央の十字（細め、薄め） */
+#canvas-wrap::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border2) 1px, transparent 1px);
+  background-size: 100% 100%;
+  background-position: center center;
+  opacity: .5;
+  pointer-events: none; z-index: 1;
+}
 
-    /* 問題リスト（編集用） */
-    .edit-list-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 4px 0;
-    }
-    .edit-list-title { font-size: 13px; font-weight: 700; color: var(--blue-dark); }
-    .edit-count {
-      font-size: 12px; color: var(--gray-400);
-      background: var(--gray-100); border-radius: 12px;
-      padding: 3px 10px;
-    }
+/* 答え表示オーバーレイ */
+#ans-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--kanji-font);
+  font-size: min(60vw, 60vh, 280px);
+  font-weight: 700;
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity .25s;
+  user-select: none;
+}
+#ans-overlay.show { opacity: .12; }
 
-    .edit-problem-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px;
-      background: var(--gray-100);
-      border-radius: var(--radius-sm);
-      border: 2px solid transparent;
-      transition: border-color 0.15s;
-    }
-    .edit-problem-row:hover { border-color: var(--gray-200); }
+#write-canvas {
+  position: absolute; inset: 0;
+  z-index: 3;
+  touch-action: none;
+  cursor: crosshair;
+}
 
-    .edit-kanji {
-      font-size: 28px; font-weight: 700;
-      color: var(--blue-dark); min-width: 40px; text-align: center;
-      font-family: 'Hiragino Mincho ProN', 'Noto Serif JP', 'Yu Mincho', serif;
-    }
-    .edit-fields { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
-    .edit-field {
-      display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 100px;
-    }
-    .edit-field label { font-size: 10px; font-weight: 600; color: var(--gray-400); }
-    .edit-field input {
-      padding: 7px 10px;
-      border: 1px solid var(--gray-200); border-radius: 7px;
-      font-size: 13px; font-family: var(--font-jp);
-      color: var(--blue-dark); outline: none;
-      transition: border-color 0.2s; background: white;
-    }
-    .edit-field input:focus { border-color: var(--blue-mid); }
+/* キャンバス下ツールバー */
+#canvas-toolbar {
+  flex-shrink: 0;
+  height: 48px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 10px;
+  background: var(--surface);
+  z-index: 10;
+}
+.tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+.tb-btn {
+  height: 32px; padding: 0 14px;
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  background: none;
+  font-size: 12px;
+  font-family: var(--ui-font);
+  color: var(--ink2);
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tb-btn:hover { background: var(--border); color: var(--ink); }
+/* ペン太さ */
+.pen-dot {
+  width: 30px; height: 30px;
+  border: 1px solid var(--border2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.pen-dot:hover, .pen-dot.sel { border-color: var(--ink); background: var(--ink); }
+.pen-dot:hover .dot-inner, .pen-dot.sel .dot-inner { background: #fff; }
+.dot-inner { border-radius: 50%; background: var(--ink); pointer-events: none; }
 
-    .btn-delete {
-      width: 34px; height: 34px; flex-shrink: 0;
-      border-radius: 8px; background: #fef0ef;
-      border: 1px solid #fcd3d0; color: #e74c3c;
-      font-size: 16px; cursor: pointer; transition: all 0.18s;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .btn-delete:hover { background: #e74c3c; color: white; border-color: #e74c3c; }
+/* ── モーダル ── */
+#modal-ov {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  align-items: center; justify-content: center;
+}
+#modal-ov.open { display: flex; }
+#modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  width: min(580px, 95vw);
+  max-height: 88dvh;
+  display: flex; flex-direction: column;
+  animation: mIn .2s ease;
+}
+@keyframes mIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+.mhdr {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.mhdr h2 { font-size: 14px; font-weight: 700; letter-spacing: .06em; }
+.mclose {
+  width: 28px; height: 28px; border-radius: 4px;
+  border: 1px solid var(--border2); background: none;
+  color: var(--ink2); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.mclose:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+.mbody { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.mbody::-webkit-scrollbar { width: 4px; }
+.mbody::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.mfooter {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
 
-    /* モーダルフッター */
-    .modal-footer {
-      padding: 14px 20px;
-      background: var(--gray-100);
-      border-top: 1px solid var(--gray-200);
-      display: flex; gap: 10px; justify-content: flex-end;
-      flex-shrink: 0;
-    }
-    .btn-modal-cancel {
-      padding: 10px 20px; background: white;
-      border: 2px solid var(--gray-200); border-radius: 9px;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-      font-family: var(--font-jp); color: var(--gray-700);
-      transition: all 0.18s;
-    }
-    .btn-modal-cancel:hover { border-color: var(--gray-400); }
-    .btn-modal-save {
-      padding: 10px 28px;
-      background: linear-gradient(135deg, var(--blue-mid), var(--blue-dark));
-      color: white; border: none; border-radius: 9px;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-      font-family: var(--font-jp); transition: all 0.2s;
-      box-shadow: 0 3px 10px rgba(30,95,168,0.3);
-    }
-    .btn-modal-save:hover { box-shadow: 0 4px 16px rgba(30,95,168,0.45); }
+/* モーダル追加フォーム */
+.add-form {
+  border: 1px dashed var(--border2);
+  border-radius: var(--r);
+  padding: 14px;
+}
+.add-form-title { font-size: 11px; letter-spacing: .08em; color: var(--ink3); margin-bottom: 10px; text-transform: uppercase; }
+.add-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.afield { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 80px; }
+.afield label { font-size: 10px; letter-spacing: .08em; color: var(--ink3); text-transform: uppercase; }
+.afield input {
+  padding: 7px 10px; border: 1px solid var(--border2); border-radius: var(--r);
+  font-size: 14px; font-family: var(--kanji-font); color: var(--ink);
+  outline: none; transition: border-color .15s; background: var(--bg);
+}
+.afield input:focus { border-color: var(--ink); }
+.afield input.ki { font-size: 22px; width: 52px; text-align: center; }
+.btn-add {
+  padding: 8px 16px; background: var(--ink); color: #fff; border: none;
+  border-radius: var(--r); font-size: 12px; cursor: pointer;
+  font-family: var(--ui-font); letter-spacing: .06em; align-self: flex-end;
+  transition: opacity .15s;
+}
+.btn-add:hover { opacity: .8; }
 
-    /* ======================================
-       レスポンシブ
-    ====================================== */
-    @media (max-width: 768px) {
-      #main { grid-template-columns: 140px 1fr 1fr; gap: 10px; padding: 10px; }
-      .problem-card .kanji-label { font-size: 22px; }
-      #header h1 span { display: none; }
-    }
-    @media (max-width: 600px) {
-      #main { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; overflow-y: auto; }
-      #panel-list { max-height: 150px; }
-      #problem-list { flex-direction: row; flex-wrap: wrap; }
-    }
-  </style>
+/* モーダル問題リスト */
+.elist-hdr { display: flex; align-items: center; justify-content: space-between; }
+.elist-title { font-size: 11px; letter-spacing: .08em; color: var(--ink3); text-transform: uppercase; }
+.ecount { font-size: 11px; color: var(--ink3); }
+.erow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--r);
+  transition: border-color .15s;
+}
+.erow:hover { border-color: var(--border2); }
+.ek { font-family: var(--kanji-font); font-size: 24px; min-width: 30px; text-align: center; color: var(--ink); }
+.efields { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+.ef { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 80px; }
+.ef label { font-size: 9px; letter-spacing: .08em; color: var(--ink3); text-transform: uppercase; }
+.ef input {
+  padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px;
+  font-size: 12px; font-family: var(--kanji-font); color: var(--ink);
+  outline: none; transition: border-color .15s; background: var(--bg);
+}
+.ef input:focus { border-color: var(--ink); }
+.btn-del {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border: 1px solid var(--border); border-radius: 4px;
+  background: none; color: var(--ink3); font-size: 12px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.btn-del:hover { background: var(--wrong); border-color: var(--wrong); color: #fff; }
+</style>
 </head>
 <body>
 
-<!-- ======================================
-     ヘッダー
-====================================== -->
-<header id="header">
-  <h1>漢字書き取り練習 <span>Kanji Writing Practice</span></h1>
-  <div class="header-controls">
-    <!-- 答え非表示モードトグル -->
-    <div class="hide-mode-wrap" id="hide-mode-toggle" onclick="toggleHideMode()" title="答えを見ずに練習するモード">
-      <span class="toggle-label">🙈 答え非表示</span>
-      <div class="toggle-switch"></div>
-    </div>
-    <!-- 問題編集ボタン -->
-    <button class="btn-edit-open" onclick="openModal()">⚙️ 問題を編集</button>
+<header id="hdr">
+  <div id="hdr-title">漢字練習帳<span>Kanji Practice</span></div>
+  <div class="hdr-actions">
+    <button class="ghost-btn" id="hide-btn" onclick="toggleHide()">答えを隠す</button>
+    <button class="ghost-btn" onclick="openModal()">問題を編集</button>
   </div>
 </header>
 
-<!-- ======================================
-     メインエリア（3分割）
-====================================== -->
-<main id="main">
+<div id="app">
 
-  <!-- ① 左パネル：問題一覧 -->
-  <section class="panel" id="panel-list">
-    <div class="panel-header">
-      <span class="icon">📝</span>問題一覧
-    </div>
-    <div id="problem-list"></div>
-  </section>
+  <!-- 問題ナビ -->
+  <div id="nav">
+    <span id="nav-label">問題</span>
+    <button class="nav-arrow" id="btn-prev" onclick="go(-1)">‹</button>
+    <div id="pill-wrap"></div>
+    <button class="nav-arrow" id="btn-next" onclick="go(+1)">›</button>
+  </div>
 
-  <!-- ② 中央パネル：なぞりエリア -->
-  <section class="panel" id="panel-trace">
-    <div class="panel-header">
-      <span class="icon">👆</span>なぞり練習
-    </div>
-    <!-- 答え非表示モードのバナー -->
-    <div id="hide-mode-banner">🙈 答え非表示モード ON — お手本なしで練習中</div>
-    <!-- 問題情報 -->
-    <div id="current-info">
-      <div id="current-kanji-display">漢</div>
-      <div class="info-text">
-        <div class="info-yomi" id="current-yomi">よみがな</div>
-        <div class="info-stroke" id="current-stroke">お手本をなぞって練習しましょう</div>
+  <!-- メイン -->
+  <div id="main">
+
+    <!-- サイドバー -->
+    <div id="sidebar">
+
+      <div class="side-section">
+        <span class="side-label">問 <span id="side-num">1 / 12</span></span>
+        <div id="side-kanji">漢</div>
+      </div>
+
+      <div class="side-section">
+        <span class="side-label">読み方</span>
+        <div id="side-yomi">かん</div>
+      </div>
+
+      <div class="side-section">
+        <span class="side-label">ヒント</span>
+        <div id="side-hint">水＋𦰩</div>
+      </div>
+
+      <!-- 答え表示ボタン -->
+      <div class="side-section">
+        <button id="ans-btn" onclick="toggleAns()">答えを見る</button>
+      </div>
+
+      <!-- 正誤判定 -->
+      <div class="side-section">
+        <div class="judge-btns" id="judge-btns">
+          <button class="jbtn jbtn-ok" onclick="judge('correct')">○ 正解</button>
+          <button class="jbtn jbtn-ng" onclick="judge('wrong')">✕ 不正解</button>
+        </div>
+        <div id="result-badge"></div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+    <!-- キャンバス -->
+    <div id="canvas-wrap">
+      <div id="ans-overlay"></div>
+      <canvas id="write-canvas"></canvas>
+      <!-- ツールバー -->
+      <div id="canvas-toolbar">
+        <button class="tb-btn" onclick="clearCanvas()">消す</button>
+        <div class="tb-sep"></div>
+        <!-- ペンサイズ -->
+        <div class="pen-dot sel" id="pd-s" onclick="setPen(5,'s')" title="細">
+          <div class="dot-inner" style="width:4px;height:4px"></div>
+        </div>
+        <div class="pen-dot" id="pd-m" onclick="setPen(9,'m')" title="中">
+          <div class="dot-inner" style="width:7px;height:7px"></div>
+        </div>
+        <div class="pen-dot" id="pd-l" onclick="setPen(14,'l')" title="太">
+          <div class="dot-inner" style="width:11px;height:11px"></div>
+        </div>
       </div>
     </div>
-    <!-- キャンバスエリア -->
-    <div class="canvas-area" id="trace-area">
-      <div id="trace-kanji">漢</div>
-      <canvas class="draw-canvas" id="trace-canvas"></canvas>
-    </div>
-    <!-- ボタン -->
-    <div class="btn-area">
-      <button class="btn btn-clear" onclick="clearCanvas('trace')">🗑️ 消す</button>
-      <button class="btn btn-answer" id="trace-answer-btn" onclick="toggleAnswer()">👁️ 答えを見る</button>
-      <button class="btn btn-thin" id="pen-thin"  onclick="setPenSize(4,  'thin')" title="細め">細</button>
-      <button class="btn btn-thin selected" id="pen-mid" onclick="setPenSize(8,  'mid')"  title="標準">中</button>
-      <button class="btn btn-thin" id="pen-thick" onclick="setPenSize(14, 'thick')" title="太め">太</button>
-    </div>
-  </section>
 
-  <!-- ③ 右パネル：手書きエリア -->
-  <section class="panel" id="panel-free">
-    <div class="panel-header">
-      <span class="icon">✍️</span>手書き練習
-    </div>
-    <div id="free-info">
-      <div class="dot"></div>
-      自由に書いて練習しましょう
-    </div>
-    <div class="canvas-area" id="free-area">
-      <canvas class="draw-canvas" id="free-canvas"></canvas>
-    </div>
-    <div class="btn-area">
-      <button class="btn btn-clear" onclick="clearCanvas('free')">🗑️ 消す</button>
-      <button class="btn btn-green" onclick="clearCanvas('free')">🔄 もう一度</button>
-    </div>
-  </section>
+  </div><!-- /main -->
+</div><!-- /app -->
 
-</main>
-
-<!-- ======================================
-     問題編集モーダル
-====================================== -->
-<div id="modal-overlay">
+<!-- 問題編集モーダル -->
+<div id="modal-ov">
   <div id="modal">
-    <div class="modal-header">
-      <h2>⚙️ 問題を編集する</h2>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="mhdr">
+      <h2>問題を編集する</h2>
+      <button class="mclose" onclick="closeModal()">✕</button>
     </div>
-    <div class="modal-body" id="modal-body">
-      <!-- JSで動的生成 -->
-    </div>
-    <div class="modal-footer">
-      <button class="btn-modal-cancel" onclick="closeModal()">キャンセル</button>
-      <button class="btn-modal-save" onclick="saveModal()">✅ 保存して閉じる</button>
+    <div class="mbody" id="modal-body"></div>
+    <div class="mfooter">
+      <button class="ghost-btn" onclick="closeModal()">キャンセル</button>
+      <button class="ghost-btn on" onclick="saveModal()">保存して閉じる</button>
     </div>
   </div>
 </div>
 
-<!-- ======================================
-     JavaScript
-====================================== -->
 <script>
 /* ============================================================
-   問題データ（初期値）
-   ここを直接編集するか、モーダルから追加・削除できます
+   問題データ
 ============================================================ */
 let problems = [
-  { kanji: "初", yomi: "はじめ・しょ",  hint: "刀＋衣" },
-  { kanji: "信", yomi: "しん・まこと",  hint: "人＋言" },
-  { kanji: "勉", yomi: "べん",          hint: "冂＋力" },
-  { kanji: "練", yomi: "れん・ねる",    hint: "糸＋東" },
-  { kanji: "習", yomi: "しゅう・なら",  hint: "羽＋白" },
-  { kanji: "読", yomi: "どく・よむ",    hint: "言＋売" },
-  { kanji: "書", yomi: "しょ・かく",    hint: "聿＋日" },
-  { kanji: "漢", yomi: "かん",          hint: "水＋𦰩" },
-  { kanji: "字", yomi: "じ・あざ",      hint: "宀＋子" },
-  { kanji: "問", yomi: "もん・とう",    hint: "門＋口" },
-  { kanji: "答", yomi: "とう・こたえ",  hint: "竹＋合" },
-  { kanji: "題", yomi: "だい",          hint: "是＋頁" },
+  {kanji:"初",yomi:"はじめ・しょ",  hint:"刀＋衣"},
+  {kanji:"信",yomi:"しん・まこと",  hint:"人＋言"},
+  {kanji:"勉",yomi:"べん",          hint:"冂＋力"},
+  {kanji:"練",yomi:"れん・ねる",    hint:"糸＋東"},
+  {kanji:"習",yomi:"しゅう・なら",  hint:"羽＋白"},
+  {kanji:"読",yomi:"どく・よむ",    hint:"言＋売"},
+  {kanji:"書",yomi:"しょ・かく",    hint:"聿＋日"},
+  {kanji:"漢",yomi:"かん",          hint:"水＋𦰩"},
+  {kanji:"字",yomi:"じ・あざ",      hint:"宀＋子"},
+  {kanji:"問",yomi:"もん・とう",    hint:"門＋口"},
+  {kanji:"答",yomi:"とう・こたえ",  hint:"竹＋合"},
+  {kanji:"題",yomi:"だい",          hint:"是＋頁"},
 ];
 
-/* ============================================================
-   状態変数
-============================================================ */
-let currentIndex    = 0;      // 現在の問題インデックス
-let isAnswerVisible = false;  // 答え表示のON/OFF
-let isHideMode      = false;  // 答え非表示モード
-let penSize         = 8;      // ペンの太さ
+/* ── 状態 ── */
+let cur       = 0;
+let penSize   = 5;
+let hideMode  = false;
+let ansShown  = false;
+let judged    = [];   // 'correct' | 'wrong' | null
+let editBuf   = [];
 
-// モーダルで編集中の一時コピー
-let editingProblems = [];
-
-/* ============================================================
-   Canvas管理
-============================================================ */
-const canvases = {
-  trace: { canvas: null, ctx: null, isDrawing: false, lastX: 0, lastY: 0 },
-  free:  { canvas: null, ctx: null, isDrawing: false, lastX: 0, lastY: 0 }
-};
+/* ── Canvas ── */
+let canvas, ctx;
+let drawing = false, lx = 0, ly = 0;
 
 /* ============================================================
    初期化
 ============================================================ */
 function init() {
-  initCanvas('trace', document.getElementById('trace-canvas'));
-  initCanvas('free',  document.getElementById('free-canvas'));
-  renderProblemList();
-  selectProblem(0);
-  window.addEventListener('resize', resizeAllCanvas);
+  canvas = document.getElementById('write-canvas');
+  ctx    = canvas.getContext('2d');
 
-  // モーダル外クリックで閉じる
-  document.getElementById('modal-overlay').addEventListener('click', (e) => {
+  fitCanvas();
+  window.addEventListener('resize', fitCanvas);
+
+  // マウス
+  canvas.addEventListener('mousedown',  e => startDraw(e));
+  canvas.addEventListener('mousemove',  e => draw(e));
+  canvas.addEventListener('mouseup',    () => stopDraw());
+  canvas.addEventListener('mouseleave', () => stopDraw());
+  // タッチ
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e.touches[0]); }, {passive:false});
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); draw(e.touches[0]); },      {passive:false});
+  canvas.addEventListener('touchend',   e => { e.preventDefault(); stopDraw(); },               {passive:false});
+
+  judged = new Array(problems.length).fill(null);
+  renderPills();
+  selectProblem(0);
+
+  document.getElementById('modal-ov').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
 }
 
 /* ============================================================
-   Canvas初期化・描画
+   Canvas
 ============================================================ */
-function initCanvas(key, canvas) {
-  const c = canvases[key];
-  c.canvas = canvas;
-  c.ctx = canvas.getContext('2d');
-  fitCanvas(key);
-
-  // マウス
-  canvas.addEventListener('mousedown',  (e) => startDraw(key, e));
-  canvas.addEventListener('mousemove',  (e) => draw(key, e));
-  canvas.addEventListener('mouseup',    ()  => stopDraw(key));
-  canvas.addEventListener('mouseleave', ()  => stopDraw(key));
-  // タッチ
-  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(key, e.touches[0]); }, { passive: false });
-  canvas.addEventListener('touchmove',  (e) => { e.preventDefault(); draw(key, e.touches[0]); },      { passive: false });
-  canvas.addEventListener('touchend',   (e) => { e.preventDefault(); stopDraw(key); },                { passive: false });
+function fitCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  // ツールバーの高さを除く
+  const tb = document.getElementById('canvas-toolbar');
+  const h  = wrap.clientHeight - tb.offsetHeight;
+  const w  = wrap.clientWidth;
+  canvas.width  = w;
+  canvas.height = h;
+  canvas.style.width  = w + 'px';
+  canvas.style.height = h + 'px';
 }
 
-function fitCanvas(key) {
-  const c = canvases[key];
-  const rect = c.canvas.parentElement.getBoundingClientRect();
-  c.canvas.width  = rect.width;
-  c.canvas.height = rect.height;
-}
-
-function resizeAllCanvas() {
-  fitCanvas('trace');
-  fitCanvas('free');
-}
-
-function getPos(key, e) {
-  const rect = canvases[key].canvas.getBoundingClientRect();
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
   return {
-    x: (e.clientX - rect.left) * (canvases[key].canvas.width  / rect.width),
-    y: (e.clientY - rect.top)  * (canvases[key].canvas.height / rect.height)
+    x: (e.clientX - r.left) * (canvas.width  / r.width),
+    y: (e.clientY - r.top)  * (canvas.height / r.height)
   };
 }
 
-function startDraw(key, e) {
-  const c = canvases[key];
-  c.isDrawing = true;
-  const pos = getPos(key, e);
-  c.lastX = pos.x; c.lastY = pos.y;
-  c.ctx.beginPath();
-  c.ctx.arc(pos.x, pos.y, penSize / 2, 0, Math.PI * 2);
-  c.ctx.fillStyle = '#1a3a5c';
-  c.ctx.fill();
+function startDraw(e) {
+  drawing = true;
+  const p = getPos(e); lx = p.x; ly = p.y;
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, penSize / 2, 0, Math.PI * 2);
+  ctx.fillStyle = '#1c1917';
+  ctx.fill();
 }
 
-function draw(key, e) {
-  const c = canvases[key];
-  if (!c.isDrawing) return;
-  const pos = getPos(key, e);
-  c.ctx.beginPath();
-  c.ctx.moveTo(c.lastX, c.lastY);
-  c.ctx.lineTo(pos.x, pos.y);
-  c.ctx.strokeStyle = '#1a3a5c';
-  c.ctx.lineWidth   = penSize;
-  c.ctx.lineCap     = 'round';
-  c.ctx.lineJoin    = 'round';
-  c.ctx.globalAlpha = 0.92;
-  c.ctx.stroke();
-  c.lastX = pos.x; c.lastY = pos.y;
+function draw(e) {
+  if (!drawing) return;
+  const p = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(lx, ly);
+  ctx.lineTo(p.x, p.y);
+  ctx.strokeStyle = '#1c1917';
+  ctx.lineWidth   = penSize;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+  ctx.globalAlpha = .94;
+  ctx.stroke();
+  lx = p.x; ly = p.y;
 }
 
-function stopDraw(key) {
-  canvases[key].isDrawing = false;
-  canvases[key].ctx.globalAlpha = 1.0;
+function stopDraw() {
+  drawing = false;
+  ctx.globalAlpha = 1;
 }
 
-function clearCanvas(key) {
-  const c = canvases[key];
-  c.ctx.clearRect(0, 0, c.canvas.width, c.canvas.height);
+function clearCanvas() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 /* ============================================================
-   問題一覧レンダリング
+   ピル（問題ナビ）
 ============================================================ */
-function renderProblemList() {
-  const listEl = document.getElementById('problem-list');
-  listEl.innerHTML = '';
+function renderPills() {
+  const wrap = document.getElementById('pill-wrap');
+  wrap.innerHTML = '';
   problems.forEach((p, i) => {
-    const card = document.createElement('div');
-    card.className = 'problem-card' + (i === currentIndex ? ' active' : '');
-    card.id = `card-${i}`;
-    card.innerHTML = `
-      <span class="kanji-label">${p.kanji}</span>
-      <span class="yomi-label">${p.yomi.split('・')[0]}</span>
-      <span class="num">${i + 1}</span>
-    `;
-    card.addEventListener('click', () => selectProblem(i));
-    listEl.appendChild(card);
+    const d = document.createElement('div');
+    d.className = 'pill' + (i === cur ? ' active' : '')
+                + (judged[i] === 'correct' ? ' done-correct' : '')
+                + (judged[i] === 'wrong'   ? ' done-wrong'   : '');
+    d.id = 'pill-' + i;
+    d.innerHTML = `<span class="pill-k">${p.kanji}</span><span class="pill-n">${i+1}</span>`;
+    d.onclick = () => selectProblem(i);
+    wrap.appendChild(d);
   });
+  document.getElementById('btn-prev').disabled = (cur === 0);
+  document.getElementById('btn-next').disabled = (cur === problems.length - 1);
+}
+
+function go(d) {
+  const n = cur + d;
+  if (n >= 0 && n < problems.length) selectProblem(n);
 }
 
 /* ============================================================
    問題切り替え
 ============================================================ */
-function selectProblem(index) {
-  const prevCard = document.getElementById(`card-${currentIndex}`);
-  if (prevCard) prevCard.classList.remove('active');
+function selectProblem(i) {
+  const prev = document.getElementById('pill-' + cur);
+  if (prev) prev.classList.remove('active');
 
-  currentIndex = index;
-  const p = problems[index];
+  cur = i;
+  const p = problems[i];
 
-  const card = document.getElementById(`card-${index}`);
-  if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  document.getElementById('pill-' + i)?.classList.add('active');
+  document.getElementById('pill-' + i)?.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
 
-  document.getElementById('trace-kanji').textContent           = p.kanji;
-  document.getElementById('current-kanji-display').textContent = p.kanji;
-  document.getElementById('current-yomi').textContent          = p.yomi;
-  document.getElementById('current-stroke').textContent        = `構成：${p.hint}`;
-  document.getElementById('free-info').innerHTML =
-    `<div class="dot"></div>「${p.kanji}」を自由に書いて練習しましょう`;
+  document.getElementById('side-kanji').textContent = p.kanji;
+  document.getElementById('side-yomi').textContent  = p.yomi;
+  document.getElementById('side-hint').textContent  = p.hint;
+  document.getElementById('side-num').textContent   = `${i+1} / ${problems.length}`;
+  document.getElementById('ans-overlay').textContent = p.kanji;
 
-  clearCanvas('trace');
-  clearCanvas('free');
+  // 答え・判定リセット
+  ansShown = false;
+  document.getElementById('ans-overlay').classList.remove('show');
+  document.getElementById('ans-btn').textContent = '答えを見る';
+  document.getElementById('ans-btn').classList.remove('showing');
+  document.getElementById('judge-btns').classList.remove('visible');
+  document.body.classList.remove('ans-shown');
 
-  // 答え表示・answer-shown クラスをリセット
-  if (isAnswerVisible) {
-    isAnswerVisible = false;
-    document.getElementById('trace-kanji').classList.remove('answer-visible');
-    document.getElementById('trace-answer-btn').classList.remove('active');
-    document.getElementById('trace-answer-btn').innerHTML = '👁️ 答えを見る';
-    document.body.classList.remove('answer-shown');
-  }
+  const rb = document.getElementById('result-badge');
+  rb.className = 'result-badge';
+  rb.style.display = 'none';
+  rb.textContent = '';
+
+  clearCanvas();
+
+  document.getElementById('btn-prev').disabled = (cur === 0);
+  document.getElementById('btn-next').disabled = (cur === problems.length - 1);
 }
 
 /* ============================================================
-   答えを見るボタン（なぞりエリア）
-   答え非表示モード中も動作する（手動で表示できる）
+   答えを見る
 ============================================================ */
-function toggleAnswer() {
-  isAnswerVisible = !isAnswerVisible;
-  const traceKanji = document.getElementById('trace-kanji');
-  const btn        = document.getElementById('trace-answer-btn');
+function toggleAns() {
+  ansShown = !ansShown;
+  const overlay = document.getElementById('ans-overlay');
+  const btn     = document.getElementById('ans-btn');
+  const jbtns   = document.getElementById('judge-btns');
 
-  if (isAnswerVisible) {
-    traceKanji.classList.add('answer-visible');
-    btn.classList.add('active');
-    btn.innerHTML = '🙈 答えを隠す';
-    document.body.classList.add('answer-shown');   // 非表示モード中でも解除
+  if (ansShown) {
+    overlay.classList.add('show');
+    btn.textContent = '答えを隠す';
+    btn.classList.add('showing');
+    jbtns.classList.add('visible');
+    document.body.classList.add('ans-shown');
   } else {
-    traceKanji.classList.remove('answer-visible');
-    btn.classList.remove('active');
-    btn.innerHTML = '👁️ 答えを見る';
-    document.body.classList.remove('answer-shown');
+    overlay.classList.remove('show');
+    btn.textContent = '答えを見る';
+    btn.classList.remove('showing');
+    jbtns.classList.remove('visible');
+    document.body.classList.remove('ans-shown');
   }
 }
 
 /* ============================================================
-   答え非表示モード（ヘッダートグル）
-   ONにすると：
-     - お手本漢字が完全に非表示（opacity 0）
-     - 問題一覧の漢字も隠れる
-     - 中央パネルの漢字表示も隠れる
-     - 「答えを見る」ボタンは引き続き機能する
+   正誤判定
 ============================================================ */
-function toggleHideMode() {
-  isHideMode = !isHideMode;
-  const toggle = document.getElementById('hide-mode-toggle');
+function judge(result) {
+  judged[cur] = result;
 
-  if (isHideMode) {
-    document.body.classList.add('hide-mode');
-    toggle.classList.add('active');
+  // バッジ表示
+  const rb = document.getElementById('result-badge');
+  rb.style.display = 'flex';
+  if (result === 'correct') {
+    rb.className = 'result-badge show correct';
+    rb.textContent = '○  正解';
   } else {
-    document.body.classList.remove('hide-mode');
-    toggle.classList.remove('active');
-    // 非表示モードOFF時に answer-shown も解除
-    document.body.classList.remove('answer-shown');
+    rb.className = 'result-badge show wrong';
+    rb.textContent = '✕  不正解';
   }
 
-  // 答え表示状態もリセット
-  if (isAnswerVisible) {
-    isAnswerVisible = false;
-    document.getElementById('trace-kanji').classList.remove('answer-visible');
-    document.getElementById('trace-answer-btn').classList.remove('active');
-    document.getElementById('trace-answer-btn').innerHTML = '👁️ 答えを見る';
+  // ピル更新
+  const pill = document.getElementById('pill-' + cur);
+  if (pill) {
+    pill.classList.remove('done-correct', 'done-wrong');
+    pill.classList.add(result === 'correct' ? 'done-correct' : 'done-wrong');
   }
+
+  // 少し間を置いて次の問題へ
+  setTimeout(() => {
+    if (cur < problems.length - 1) go(+1);
+  }, 700);
 }
 
 /* ============================================================
-   ペンの太さ
+   答え非表示モード
 ============================================================ */
-function setPenSize(size, id) {
-  penSize = size;
-  ['thin', 'mid', 'thick'].forEach(s => document.getElementById(`pen-${s}`).classList.remove('selected'));
-  document.getElementById(`pen-${id}`).classList.add('selected');
+function toggleHide() {
+  hideMode = !hideMode;
+  document.body.classList.toggle('hide-mode', hideMode);
+  document.getElementById('hide-btn').classList.toggle('on', hideMode);
+  document.getElementById('hide-btn').textContent = hideMode ? '答えを表示' : '答えを隠す';
+  // 答えを隠す
+  if (ansShown) toggleAns();
+}
+
+/* ============================================================
+   ペンサイズ
+============================================================ */
+function setPen(sz, id) {
+  penSize = sz;
+  ['s','m','l'].forEach(k => document.getElementById('pd-'+k).classList.remove('sel'));
+  document.getElementById('pd-'+id).classList.add('sel');
 }
 
 /* ============================================================
    問題編集モーダル
 ============================================================ */
-
-// モーダルを開く
 function openModal() {
-  // 現在のproblemsをディープコピーして編集バッファに入れる
-  editingProblems = problems.map(p => ({ ...p }));
-  renderModalBody();
-  document.getElementById('modal-overlay').classList.add('open');
+  editBuf = problems.map(p => ({...p}));
+  renderModal();
+  document.getElementById('modal-ov').classList.add('open');
 }
-
-// モーダルを閉じる（変更破棄）
 function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('modal-ov').classList.remove('open');
 }
 
-// モーダルの中身をレンダリング
-function renderModalBody() {
+function renderModal() {
   const body = document.getElementById('modal-body');
   body.innerHTML = '';
 
-  // ── 追加フォーム ──
-  const addForm = document.createElement('div');
-  addForm.className = 'add-form';
-  addForm.innerHTML = `
-    <div class="add-form-title">➕ 新しい問題を追加</div>
-    <div class="add-form-row">
-      <div class="add-form-field" style="flex:0 0 auto">
-        <label>漢字（1文字）</label>
-        <input class="kanji-input" id="new-kanji" type="text" maxlength="1" placeholder="例：学" />
+  // 追加フォーム
+  const af = document.createElement('div');
+  af.className = 'add-form';
+  af.innerHTML = `
+    <div class="add-form-title">新しい問題を追加</div>
+    <div class="add-row">
+      <div class="afield" style="flex:0 0 auto">
+        <label>漢字</label>
+        <input class="ki" id="nk" type="text" maxlength="1" placeholder="学"/>
       </div>
-      <div class="add-form-field">
-        <label>読み方</label>
-        <input id="new-yomi" type="text" placeholder="例：がく・まなぶ" />
-      </div>
-      <div class="add-form-field">
-        <label>ヒント（部首など）</label>
-        <input id="new-hint" type="text" placeholder="例：子＋冖" />
-      </div>
-      <button class="btn-add" onclick="addProblem()">追加 ＋</button>
-    </div>
-  `;
-  body.appendChild(addForm);
+      <div class="afield"><label>読み方</label><input id="ny" type="text" placeholder="がく・まなぶ"/></div>
+      <div class="afield"><label>ヒント</label><input id="nh" type="text" placeholder="子＋冖"/></div>
+      <button class="btn-add" onclick="addEdit()">追加</button>
+    </div>`;
+  body.appendChild(af);
 
-  // ── 一覧ヘッダー ──
-  const listHeader = document.createElement('div');
-  listHeader.className = 'edit-list-header';
-  listHeader.innerHTML = `
-    <span class="edit-list-title">📋 現在の問題一覧</span>
-    <span class="edit-count" id="edit-count">${editingProblems.length}問</span>
-  `;
-  body.appendChild(listHeader);
+  const lh = document.createElement('div');
+  lh.className = 'elist-hdr';
+  lh.innerHTML = `<span class="elist-title">問題一覧</span><span class="ecount">${editBuf.length}問</span>`;
+  body.appendChild(lh);
 
-  // ── 問題行 ──
-  editingProblems.forEach((p, i) => {
+  editBuf.forEach((p, i) => {
     const row = document.createElement('div');
-    row.className = 'edit-problem-row';
-    row.id = `edit-row-${i}`;
+    row.className = 'erow';
+    row.id = 'erow-' + i;
     row.innerHTML = `
-      <div class="edit-kanji">${p.kanji}</div>
-      <div class="edit-fields">
-        <div class="edit-field">
-          <label>漢字</label>
+      <div class="ek" id="ek-${i}">${p.kanji}</div>
+      <div class="efields">
+        <div class="ef"><label>漢字</label>
           <input type="text" maxlength="1" value="${p.kanji}"
-            oninput="updateEditField(${i}, 'kanji', this.value); document.getElementById('edit-row-${i}').querySelector('.edit-kanji').textContent = this.value || '？';"
-            style="text-align:center; font-size:20px; width:56px;"
-          />
+            oninput="editBuf[${i}].kanji=this.value;document.getElementById('ek-${i}').textContent=this.value||'？'"
+            style="text-align:center;font-size:18px;width:44px"/>
         </div>
-        <div class="edit-field">
-          <label>読み方</label>
-          <input type="text" value="${p.yomi}"
-            oninput="updateEditField(${i}, 'yomi', this.value)" />
+        <div class="ef"><label>読み方</label>
+          <input type="text" value="${p.yomi}" oninput="editBuf[${i}].yomi=this.value"/>
         </div>
-        <div class="edit-field">
-          <label>ヒント</label>
-          <input type="text" value="${p.hint}"
-            oninput="updateEditField(${i}, 'hint', this.value)" />
+        <div class="ef"><label>ヒント</label>
+          <input type="text" value="${p.hint}" oninput="editBuf[${i}].hint=this.value"/>
         </div>
       </div>
-      <button class="btn-delete" onclick="deleteEditProblem(${i})" title="削除">🗑</button>
-    `;
+      <button class="btn-del" onclick="delEdit(${i})" title="削除">×</button>`;
     body.appendChild(row);
   });
 
-  // 問題が0件のとき
-  if (editingProblems.length === 0) {
-    const empty = document.createElement('div');
-    empty.style.cssText = 'text-align:center; padding:24px; color:var(--gray-400); font-size:14px;';
-    empty.textContent = '問題がありません。上のフォームから追加してください。';
-    body.appendChild(empty);
+  if (!editBuf.length) {
+    const em = document.createElement('div');
+    em.style.cssText = 'text-align:center;padding:24px;color:var(--ink3);font-size:13px';
+    em.textContent = '問題がありません。上から追加してください。';
+    body.appendChild(em);
   }
 }
 
-// 編集中フィールドの更新
-function updateEditField(index, field, value) {
-  editingProblems[index][field] = value;
-  // カウント更新は不要
+function addEdit() {
+  const k = document.getElementById('nk').value.trim();
+  const y = document.getElementById('ny').value.trim();
+  const h = document.getElementById('nh').value.trim();
+  if (!k) { alert('漢字を入力してください'); return; }
+  editBuf.push({kanji:k, yomi:y||'（未設定）', hint:h||'（未設定）'});
+  ['nk','ny','nh'].forEach(id => document.getElementById(id).value = '');
+  renderModal();
+  setTimeout(() => document.getElementById('modal-body').scrollTop = 9999, 40);
 }
 
-// 問題を追加（モーダル内）
-function addProblem() {
-  const kanji = document.getElementById('new-kanji').value.trim();
-  const yomi  = document.getElementById('new-yomi').value.trim();
-  const hint  = document.getElementById('new-hint').value.trim();
-
-  if (!kanji) {
-    alert('漢字を入力してください（1文字）');
-    document.getElementById('new-kanji').focus();
-    return;
-  }
-
-  editingProblems.push({
-    kanji: kanji,
-    yomi:  yomi  || '（よみがな未設定）',
-    hint:  hint  || '（ヒントなし）'
-  });
-
-  // フォームをリセットして再レンダリング
-  document.getElementById('new-kanji').value = '';
-  document.getElementById('new-yomi').value  = '';
-  document.getElementById('new-hint').value  = '';
-  renderModalBody();
-
-  // スクロールを一番下に
-  setTimeout(() => {
-    const body = document.getElementById('modal-body');
-    body.scrollTop = body.scrollHeight;
-  }, 50);
+function delEdit(i) {
+  if (!confirm(`「${editBuf[i].kanji}」を削除しますか？`)) return;
+  editBuf.splice(i, 1);
+  renderModal();
 }
 
-// 問題を削除（モーダル内）
-function deleteEditProblem(index) {
-  if (!confirm(`「${editingProblems[index].kanji}」を削除しますか？`)) return;
-  editingProblems.splice(index, 1);
-  renderModalBody();
-}
-
-// 保存して閉じる
 function saveModal() {
-  // バリデーション：漢字が空のものを除外
-  const valid = editingProblems.filter(p => p.kanji.trim() !== '');
-  if (valid.length === 0) {
-    alert('問題が0件になります。最低1問は設定してください。');
-    return;
-  }
-
-  problems = valid;
-
-  // currentIndex が範囲外になった場合は0に戻す
-  if (currentIndex >= problems.length) currentIndex = 0;
-
-  // 一覧を再描画して問題を再選択
-  renderProblemList();
-  selectProblem(currentIndex);
-
+  const v = editBuf.filter(p => p.kanji.trim());
+  if (!v.length) { alert('最低1問必要です'); return; }
+  problems = v;
+  judged   = new Array(problems.length).fill(null);
+  if (cur >= problems.length) cur = 0;
+  renderPills();
+  selectProblem(cur);
   closeModal();
 }
 
-/* ============================================================
-   起動
-============================================================ */
 window.addEventListener('DOMContentLoaded', init);
 </script>
-
 </body>
 </html>
